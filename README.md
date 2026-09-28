@@ -6,7 +6,7 @@ Ngelereng adalah game tebak medan berbasis web. Pemain melihat pemandangan perbu
 
 Game ini dirancang untuk dua kebutuhan sekaligus: permainan santai harian untuk publik, dan alat latihan membaca peta kontur serta orientasi medan (navigasi darat).
 
-🔗 **Main sekarang:** `https://<username>.github.io/ngelereng`
+🔗 **Main sekarang:** `https://meowtret.github.io/ngelereng/`
 
 ---
 
