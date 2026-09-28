@@ -120,7 +120,7 @@ details.how ol{padding-left:20px;margin:6px 0 0}
 .result{max-width:520px}
 .score{font-size:clamp(4rem,20vw,7rem);font-weight:800;letter-spacing:-.04em;line-height:1;margin:18px 0 6px}
 .squares{font-size:2rem;letter-spacing:.2em;margin:0 0 10px}
-.sharebox{width:100%;min-height:120px;margin:10px 0;padding:12px;border-radius:12px;border:1px solid var(--line);background:var(--slate);color:var(--paper);font:inherit;resize:none}
+.shareimg{display:block;width:100%;max-width:280px;aspect-ratio:9/16;margin:6px 0 18px;border-radius:14px;border:1px solid var(--line);background:var(--slate);object-fit:cover}
 .row{display:flex;gap:10px;flex-wrap:wrap}
 @media (prefers-reduced-motion:no-preference){
   .feedback{animation:rise .25s ease-out}
@@ -216,9 +216,9 @@ details.how ol{padding-left:20px;margin:6px 0 0}
     <div class="score" id="resScore"></div>
     <div class="squares" id="resSquares"></div>
     <p id="resStreak" style="color:var(--muted);margin:0 0 16px"></p>
-    <textarea class="sharebox" id="shareText" readonly></textarea>
+    <img class="shareimg" id="shareImg" alt="Kartu hasil Ngelereng Harian">
     <div class="row">
-      <button class="btn primary" id="copyBtn">Salin hasil</button>
+      <button class="btn primary" id="dlBtn" disabled>Download hasil</button>
       <button class="btn" id="homeBtn">Ke beranda</button>
     </div>
   </div>
@@ -735,9 +735,92 @@ function showResult(marks) {
   $('resScore').textContent = `${score}/3`;
   $('resSquares').textContent = sq;
   $('resStreak').textContent = `Streak ${store.streak} hari, terbaik ${store.best} hari.`;
-  $('shareText').value = `Ngelereng #${DAYNO} ⛰️ ${score}/3\n${sq}\n🔥 streak ${store.streak}`;
-  $('copyBtn').textContent = 'Salin hasil';
+  $('dlBtn').disabled = true; $('dlBtn').textContent = 'Download hasil';
+  $('shareImg').removeAttribute('src');
   show('result');
+  makeCard(marks, score).then(cv => cv.toBlob(b => {
+    cardBlob = b;
+    if (cardUrl) URL.revokeObjectURL(cardUrl);
+    cardUrl = URL.createObjectURL(b);
+    $('shareImg').src = cardUrl;
+    $('dlBtn').disabled = false;
+  }, 'image/png'));
+}
+
+// ================= KARTU HASIL 9:16 =================
+let cardBlob = null, cardUrl = null;
+function rrect(x, X, Y, W, H, r) {
+  x.beginPath(); x.moveTo(X + r, Y); x.arcTo(X + W, Y, X + W, Y + H, r); x.arcTo(X + W, Y + H, X, Y + H, r);
+  x.arcTo(X, Y + H, X, Y, r); x.arcTo(X, Y, X + W, Y, r); x.closePath();
+}
+async function makeCard(marks, score) {
+  const W = 1080, H = 1920, cv = document.createElement('canvas');
+  cv.width = W; cv.height = H;
+  const x = cv.getContext('2d');
+  const F = '"Bricolage Grotesque", "Segoe UI", system-ui, sans-serif';
+  try { await Promise.all(['800', '600', '400'].map(w => document.fonts.load(`${w} 80px "Bricolage Grotesque"`))); } catch (e) {}
+
+  // latar: kontur medan soal harian pertama
+  x.fillStyle = '#131922'; x.fillRect(0, 0, W, H);
+  const P = makePuzzle(dailyRounds()[0]);
+  if (P) {
+    const cs = d3.contours().size([N, N]).thresholds(d3.range(10, P.T.max, 10))(Array.from(P.T.H));
+    const path = d3.geoPath(d3.geoIdentity().scale(H / N).translate([(W - H) / 2, 0]), x);
+    cs.forEach(c => {
+      const idx = c.value % 50 === 0;
+      x.beginPath(); path(c);
+      x.strokeStyle = idx ? 'rgba(236,232,223,.34)' : 'rgba(236,232,223,.15)';
+      x.lineWidth = idx ? 3.2 : 1.6; x.stroke();
+    });
+  }
+  const g = x.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0, 'rgba(19,25,34,.55)'); g.addColorStop(.45, 'rgba(19,25,34,.62)');
+  g.addColorStop(.8, 'rgba(19,25,34,.58)'); g.addColorStop(1, 'rgba(19,25,34,.3)');
+  x.fillStyle = g; x.fillRect(0, 0, W, H);
+
+  const L = 90;
+  x.textBaseline = 'alphabetic'; x.textAlign = 'left';
+  // wordmark
+  x.fillStyle = '#ece8df'; x.font = `800 170px ${F}`;
+  if ('letterSpacing' in x) x.letterSpacing = '-6px';
+  x.fillText('Ngelereng', L - 6, 360);
+  if ('letterSpacing' in x) x.letterSpacing = '0px';
+  // garis punggungan
+  x.save(); x.translate(L, 385); x.scale(900 / 520, 900 / 520);
+  x.strokeStyle = '#ece8df'; x.lineCap = 'round';
+  x.lineWidth = 2.4; x.stroke(new Path2D('M2 40 C60 40 80 14 130 14 S210 36 260 30 S330 6 390 8 S470 34 518 34'));
+  x.globalAlpha = .5; x.lineWidth = 1; x.stroke(new Path2D('M2 44 C70 44 92 24 132 24 S212 42 262 38 S336 18 392 20 S474 40 518 40'));
+  x.restore();
+
+  x.fillStyle = '#ece8df'; x.font = `600 58px ${F}`;
+  x.fillText(`Harian #${DAYNO}`, L, 560);
+  x.fillStyle = '#9aa3ae'; x.font = `400 44px ${F}`;
+  x.fillText(new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }), L, 625);
+
+  // skor
+  x.fillStyle = '#ece8df'; x.font = `800 400px ${F}`;
+  if ('letterSpacing' in x) x.letterSpacing = '-16px';
+  x.fillText(`${score}/3`, L - 14, 1050);
+  if ('letterSpacing' in x) x.letterSpacing = '0px';
+
+  // kotak hasil
+  marks.forEach((m, i) => {
+    rrect(x, L + i * 210, 1110, 180, 180, 30);
+    x.fillStyle = m ? '#74c08f' : '#e26d5c'; x.fill();
+  });
+
+  // streak
+  x.fillStyle = '#e3a94f'; x.font = `800 76px ${F}`;
+  x.fillText(`🔥 Streak ${store.streak} hari`, L, 1440);
+  x.fillStyle = '#9aa3ae'; x.font = `400 46px ${F}`;
+  x.fillText(`Streak terbaik ${store.best} hari`, L, 1510);
+
+  // ajakan
+  x.fillStyle = '#ece8df'; x.font = `700 60px ${F}`;
+  x.fillText('Bisa kamu kalahkan?', L, 1650);
+  x.fillStyle = '#e3a94f'; x.font = `600 46px ${F}`;
+  x.fillText('meowtret.github.io/ngelereng', L, 1720);
+  return cv;
 }
 
 // geser pemandangan setelah menjawab
@@ -768,10 +851,19 @@ $('freeBtn').addEventListener('click', startFree);
 $('backBtn').addEventListener('click', renderHome);
 $('backBtn2').addEventListener('click', renderHome);
 $('homeBtn').addEventListener('click', renderHome);
-$('copyBtn').addEventListener('click', async () => {
-  const t = $('shareText');
-  try { await navigator.clipboard.writeText(t.value); $('copyBtn').textContent = 'Tersalin'; }
-  catch (e) { t.focus(); t.select(); try { document.execCommand('copy'); $('copyBtn').textContent = 'Tersalin'; } catch (_) { $('copyBtn').textContent = 'Salin manual dari kotak di atas'; } }
+$('dlBtn').addEventListener('click', async () => {
+  if (!cardBlob) return;
+  const name = `ngelereng-harian-${DAYNO}.png`;
+  const file = new File([cardBlob], name, { type: 'image/png' });
+  // di HP: buka lembar bagikan (Simpan Gambar / Instagram Story)
+  if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent) && navigator.canShare && navigator.canShare({ files: [file] })) {
+    try { await navigator.share({ files: [file] }); return; }
+    catch (e) { if (e.name === 'AbortError') return; }
+  }
+  const a = document.createElement('a');
+  a.href = cardUrl; a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  $('dlBtn').textContent = 'Terunduh';
 });
 
 init3D();
