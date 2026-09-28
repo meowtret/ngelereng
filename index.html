@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ngelereng</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&display=swap" rel="stylesheet">
+<style>
+:root{
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  color-scheme:dark;
+  --night:#131922;      /* latar peta malam */
+  --slate:#1c2430;      /* panel */
+  --line:#2c3746;       /* garis bingkai */
+  --paper:#ece8df;      /* garis kontur & teks */
+  --muted:#9aa3ae;
+  --lantern:#e3a94f;    /* aksen: lampu kepala */
+  --pass:#74c08f;
+  --miss:#e26d5c;
+  --font:"Bricolage Grotesque", "Segoe UI", system-ui, -apple-system, sans-serif;
+}
+:root:not([data-theme="light"]){ --night:#131922; }
+:root[data-theme="dark"]{ --night:#131922; }
+*,*::before,*::after{box-sizing:inherit}
+html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;min-height:100%;background:var(--night);color:var(--paper);font-family:var(--font);font-size:16px;line-height:1.5;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--lantern);outline-offset:2px}
+.wrap{max-width:1080px;margin:0 auto;padding:16px 16px 40px}
+[hidden]{display:none!important}
+
+/* ---------- beranda ---------- */
+.brand{padding:28px 0 8px}
+.wordmark{font-size:clamp(3rem,13vw,6.2rem);font-weight:800;letter-spacing:-.035em;line-height:.9;margin:0;font-variation-settings:"opsz" 96}
+.ridges{display:block;width:min(100%,520px);height:46px;margin:6px 0 10px}
+.ridges path{fill:none;stroke:var(--paper);stroke-linecap:round}
+.tagline{font-size:1.15rem;color:var(--muted);margin:0 0 28px;max-width:34ch}
+.home-grid{display:grid;gap:14px}
+@media (min-width:760px){.home-grid{grid-template-columns:1.2fr 1fr}}
+.panel{background:var(--slate);border:1px solid var(--line);border-radius:14px;padding:18px}
+.daily h2,.free h2{margin:0 0 4px;font-size:1.45rem;font-weight:600;letter-spacing:-.01em}
+.panel p{margin:0 0 14px;color:var(--muted)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:46px;padding:10px 20px;border-radius:999px;border:1px solid var(--line);background:transparent;cursor:pointer;font-weight:600}
+.btn.primary{background:var(--lantern);border-color:var(--lantern);color:#1a1409}
+.btn.primary:hover{filter:brightness(1.07)}
+.btn:disabled{opacity:.45;cursor:default}
+.seg{display:flex;gap:6px;margin:0 0 12px;flex-wrap:wrap}
+.seg button{flex:1 1 auto;min-height:42px;padding:8px 14px;border-radius:10px;border:1px solid var(--line);background:transparent;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--paper);color:var(--night);border-color:var(--paper);font-weight:600}
+.seg-label{font-size:.9rem;color:var(--muted);margin:0 0 6px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:14px}
+.stat{padding:12px 6px;text-align:center;border-top:1px solid var(--line)}
+.stat b{display:block;font-size:1.6rem;font-weight:800;line-height:1.1}
+.stat span{font-size:.8rem;color:var(--muted)}
+details.how{margin-top:14px;color:var(--muted)}
+details.how summary{cursor:pointer;color:var(--paper);font-weight:600;padding:6px 0}
+details.how ol{padding-left:20px;margin:6px 0 0}
+
+/* ---------- permainan ---------- */
+.topbar{display:flex;align-items:center;gap:12px;padding:4px 0 12px}
+.back{width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:transparent;cursor:pointer;flex:none;font-size:1.2rem}
+.where{font-weight:600}
+.dots{margin-left:auto;display:flex;gap:6px}
+.dots i{width:10px;height:10px;border-radius:50%;background:var(--line)}
+.dots i.now{background:var(--paper)}
+.dots i.ok{background:var(--pass)}
+.dots i.no{background:var(--miss)}
+.prompt{font-size:clamp(1.25rem,4.2vw,1.7rem);font-weight:600;letter-spacing:-.01em;line-height:1.25;margin:0 0 12px;max-width:40ch}
+.game-grid{display:grid;gap:14px;grid-template-areas:"view" "map" "ans"}
+.g-view{grid-area:view}.mapbox{grid-area:map}.g-ans{grid-area:ans}
+@media (min-width:880px){.game-grid{grid-template-columns:1.25fr 1fr;grid-template-areas:"view map" "ans map";align-items:start}}
+.view{position:relative;width:100%;aspect-ratio:16/9;border-radius:14px;overflow:hidden;border:1px solid var(--line);
+  background:linear-gradient(#34465c 0%,#556a82 55%,#71849a 100%);touch-action:pan-y}
+.view canvas{display:block;width:100%;height:100%}
+.view.explore{cursor:grab}
+.badge{position:absolute;left:10px;top:10px;padding:5px 11px;border-radius:999px;background:rgba(19,25,34,.72);font-size:.9rem;backdrop-filter:blur(4px)}
+.hint{position:absolute;right:10px;bottom:10px;padding:4px 10px;border-radius:999px;background:rgba(19,25,34,.72);font-size:.8rem;color:var(--muted)}
+.mapbox{background:var(--night);border:1px solid var(--line);border-radius:14px;padding:8px}
+#map{display:block;width:100%;height:auto;aspect-ratio:1/1}
+#map .c{fill:none;stroke:rgba(236,232,223,.42);stroke-width:1.1}
+#map .c.idx{stroke:rgba(236,232,223,.95);stroke-width:2.3}
+#map .lbl{font-family:var(--font);font-size:24px;fill:var(--paper);stroke:var(--night);stroke-width:6px;paint-order:stroke;text-anchor:middle;dominant-baseline:central}
+#map .mk{cursor:pointer}
+#map .mk circle.ring{fill:var(--night);stroke:var(--paper);stroke-width:2.5}
+#map .mk text{font-family:var(--font);font-weight:800;font-size:32px;fill:var(--paper);text-anchor:middle;dominant-baseline:central}
+#map .mk.ok circle.ring{stroke:var(--pass);stroke-width:4}
+#map .mk.no circle.ring{stroke:var(--miss);stroke-width:4}
+#map .arw line{stroke:var(--paper);stroke-width:3.5}
+#map .arw text{font-family:var(--font);font-weight:700;font-size:28px;fill:var(--paper);stroke:var(--night);stroke-width:5px;paint-order:stroke;text-anchor:middle;dominant-baseline:central}
+#map .arw.ok line{stroke:var(--pass);stroke-width:4}
+#map .arw.ok text{fill:var(--pass)}
+#map .arw.no line{stroke:var(--miss);stroke-width:4}
+#map .arw.no text{fill:var(--miss)}
+#map .cone{fill:rgba(227,169,79,.16);stroke:rgba(227,169,79,.85);stroke-width:2}
+.mapnote{display:flex;justify-content:space-between;font-size:.8rem;color:var(--muted);padding:6px 4px 0}
+
+.answers{margin-top:2px}
+.compass{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;max-width:360px}
+.compass .mid{display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:.8rem;text-align:center}
+.opt{min-height:52px;border-radius:12px;border:1px solid var(--line);background:var(--slate);cursor:pointer;font-weight:600;line-height:1.1;padding:6px}
+.opt small{display:block;font-weight:400;font-size:.72rem;color:var(--muted);margin-top:2px}
+.opt:hover{border-color:var(--paper)}
+.opt.ok{border-color:var(--pass);background:rgba(116,192,143,.16)}
+.opt.no{border-color:var(--miss);background:rgba(226,109,92,.16)}
+.opt.viewing{outline:2px solid var(--lantern);outline-offset:1px}
+.abc{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;max-width:360px}
+.abc .opt{min-height:64px;font-size:1.6rem;font-weight:800}
+.feedback{margin-top:14px;padding:14px 16px;border-radius:12px;border:1px solid var(--line);background:var(--slate)}
+.feedback h3{margin:0 0 4px;font-size:1.3rem}
+.feedback p{margin:0 0 12px;color:var(--muted)}
+.feedback.ok h3{color:var(--pass)}
+.feedback.no h3{color:var(--miss)}
+.loading{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(19,25,34,.6);font-weight:600}
+
+/* ---------- hasil ---------- */
+.result{max-width:520px}
+.score{font-size:clamp(4rem,20vw,7rem);font-weight:800;letter-spacing:-.04em;line-height:1;margin:18px 0 6px}
+.squares{font-size:2rem;letter-spacing:.2em;margin:0 0 10px}
+.sharebox{width:100%;min-height:120px;margin:10px 0;padding:12px;border-radius:12px;border:1px solid var(--line);background:var(--slate);color:var(--paper);font:inherit;resize:none}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+@media (prefers-reduced-motion:no-preference){
+  .feedback{animation:rise .25s ease-out}
+  @keyframes rise{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- ================= BERANDA ================= -->
+<section id="home">
+  <div class="brand">
+    <h1 class="wordmark">Ngelereng</h1>
+    <svg class="ridges" viewBox="0 0 520 46" aria-hidden="true">
+      <path d="M2 40 C60 40 80 14 130 14 S210 36 260 30 S330 6 390 8 S470 34 518 34" stroke-width="2.4"/>
+      <path d="M2 44 C70 44 92 24 132 24 S212 42 262 38 S336 18 392 20 S474 40 518 40" stroke-width="1" opacity=".5"/>
+      <path d="M40 40 C90 40 100 30 132 30 S200 44 240 42" stroke-width="1" opacity=".35"/>
+    </svg>
+    <p class="tagline">Jalan-jalan di lereng, tebak di mana kamu berdiri.</p>
+  </div>
+
+  <div class="home-grid">
+    <div class="panel daily">
+      <h2 id="dailyTitle">Ngelereng Harian</h2>
+      <p id="dailyText">Tiga soal, sama untuk semua pemain hari ini.</p>
+      <button class="btn primary" id="dailyBtn">Main soal hari ini</button>
+      <div class="stats" id="stats"></div>
+    </div>
+    <div class="panel free">
+      <h2>Main bebas</h2>
+      <p>Soal acak tanpa batas untuk latihan.</p>
+      <div class="seg-label">Jenis soal</div>
+      <div class="seg" id="segType">
+        <button aria-pressed="true" data-v="arah">Ke mana menghadap?</button>
+        <button aria-pressed="false" data-v="posisi">Di mana berdiri?</button>
+      </div>
+      <div class="seg-label">Tingkat</div>
+      <div class="seg" id="segLevel">
+        <button aria-pressed="true" data-v="landai">Landai</button>
+        <button aria-pressed="false" data-v="tanjakan">Tanjakan</button>
+      </div>
+      <button class="btn primary" id="freeBtn">Mulai main bebas</button>
+    </div>
+  </div>
+
+  <details class="how">
+    <summary>Cara main</summary>
+    <ol>
+      <li>Bagian atas menampilkan pemandangan dari sudut pandang kamu.</li>
+      <li>Cocokkan bukit, lembah, dan punggungan yang terlihat dengan garis kontur di peta.</li>
+      <li>Soal "Ke mana menghadap?": kamu berdiri di titik merah, pilih arah hadapmu.</li>
+      <li>Soal "Di mana berdiri?": kamu menghadap arah yang disebut, pilih titik A, B, atau C. Perhatikan panah utara, karena peta bisa diputar.</li>
+      <li>Setelah menjawab, ketuk pilihan lain atau geser pemandangan untuk membandingkan.</li>
+    </ol>
+  </details>
+</section>
+
+<!-- ================= PERMAINAN ================= -->
+<section id="game" hidden>
+  <div class="topbar">
+    <button class="back" id="backBtn" aria-label="Kembali ke beranda">&#8592;</button>
+    <div class="where" id="whereLabel"></div>
+    <div class="dots" id="dots"></div>
+  </div>
+  <p class="prompt" id="prompt"></p>
+  <div class="game-grid">
+    <div class="g-view">
+      <div class="view" id="view">
+        <div class="badge" id="badge"></div>
+        <div class="hint" id="hint" hidden>Geser untuk melihat sekeliling</div>
+        <div class="loading" id="loading">Menyiapkan medan...</div>
+      </div>
+    </div>
+    <div class="g-ans">
+      <div class="answers" id="answers"></div>
+      <div id="feedback"></div>
+    </div>
+    <div class="mapbox">
+      <svg id="map" role="img" aria-label="Peta kontur"></svg>
+      <div class="mapnote"><span>Interval kontur 10 m</span><span id="mapNote"></span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= HASIL ================= -->
+<section id="result" hidden>
+  <div class="topbar">
+    <button class="back" id="backBtn2" aria-label="Kembali ke beranda">&#8592;</button>
+    <div class="where" id="resTitle"></div>
+  </div>
+  <div class="result">
+    <div class="score" id="resScore"></div>
+    <div class="squares" id="resSquares"></div>
+    <p id="resStreak" style="color:var(--muted);margin:0 0 16px"></p>
+    <textarea class="sharebox" id="shareText" readonly></textarea>
+    <div class="row">
+      <button class="btn primary" id="copyBtn">Salin hasil</button>
+      <button class="btn" id="homeBtn">Ke beranda</button>
+    </div>
+  </div>
+</section>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<script>
+/*CORE-START*/
+// ================= INTI: terrain, skyline, pembuat soal =================
+const N = 129, SIZE = 2000, HALF = SIZE / 2, CELL = SIZE / (N - 1), EYE = 2, HFOV = 60;
+const DIRS = [
+  { k: 'U',  n: 'Utara',      az: 0   },
+  { k: 'TL', n: 'Timur Laut', az: 45  },
+  { k: 'T',  n: 'Timur',      az: 90  },
+  { k: 'Tg', n: 'Tenggara',   az: 135 },
+  { k: 'S',  n: 'Selatan',    az: 180 },
+  { k: 'BD', n: 'Barat Daya', az: 225 },
+  { k: 'B',  n: 'Barat',      az: 270 },
+  { k: 'BL', n: 'Barat Laut', az: 315 }
+];
+const LETTERS = ['A', 'B', 'C'];
+
+function hashStr(s) {
+  let h = 1779033703 ^ s.length;
+  for (let i = 0; i < s.length; i++) { h = Math.imul(h ^ s.charCodeAt(i), 3432918353); h = (h << 13) | (h >>> 19); }
+  h = Math.imul(h ^ (h >>> 16), 2246822507); h = Math.imul(h ^ (h >>> 13), 3266489909);
+  return (h ^= h >>> 16) >>> 0;
+}
+function mulberry32(a) {
+  return function () {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+const rngFrom = s => mulberry32(hashStr(s));
+
+function makeNoise(rng, g) {
+  const L = new Float32Array(g * g);
+  for (let i = 0; i < L.length; i++) L[i] = rng() * 2 - 1;
+  return (u, v) => {
+    const x = u * (g - 1), y = v * (g - 1);
+    const i = Math.min(g - 2, Math.floor(x)), j = Math.min(g - 2, Math.floor(y));
+    let fx = x - i, fy = y - j; fx = fx * fx * (3 - 2 * fx); fy = fy * fy * (3 - 2 * fy);
+    const a = L[j * g + i], b = L[j * g + i + 1], c = L[(j + 1) * g + i], d = L[(j + 1) * g + i + 1];
+    return a + (b - a) * fx + (c - a) * fy + (a - b - c + d) * fx * fy;
+  };
+}
+
+function genTerrain(rng, level) {
+  const hard = level === 'tanjakan';
+  const nH = hard ? 5 + Math.floor(rng() * 3) : 3 + Math.floor(rng() * 2);
+  const hills = [];
+  for (let k = 0; k < nH; k++) {
+    const sx = 110 + rng() * 230;
+    const th = rng() * Math.PI;
+    hills.push({
+      cx: (rng() * 2 - 1) * 720, cy: (rng() * 2 - 1) * 720,
+      amp: 50 + rng() * (hard ? 190 : 160),
+      sx, sy: sx * (0.3 + rng() * 0.8), c: Math.cos(th), s: Math.sin(th)
+    });
+  }
+  const n1 = makeNoise(rng, 7), n2 = makeNoise(rng, 15);
+  const H = new Float32Array(N * N); let max = 0;
+  for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) {
+    const x = c * CELL - HALF, y = HALF - r * CELL;
+    let h = 12;
+    for (const q of hills) {
+      const dx = x - q.cx, dy = y - q.cy;
+      const u = dx * q.c + dy * q.s, v = -dx * q.s + dy * q.c;
+      h += q.amp * Math.exp(-(u * u / (2 * q.sx * q.sx) + v * v / (2 * q.sy * q.sy)));
+    }
+    const uu = c / (N - 1), vv = r / (N - 1);
+    h += n1(uu, vv) * 14 + n2(uu, vv) * 5;
+    const e = Math.min(uu, vv, 1 - uu, 1 - vv);
+    const tp = Math.min(1, e / 0.12), tt = tp * tp * (3 - 2 * tp);
+    h = Math.max(0, h * tt);
+    H[r * N + c] = h; if (h > max) max = h;
+  }
+  return { H, max };
+}
+
+function hAt(T, x, y) {
+  const fc = (x + HALF) / CELL, fr = (HALF - y) / CELL;
+  if (fc < 0 || fr < 0 || fc > N - 1 || fr > N - 1) return 0;
+  const c = Math.min(N - 2, Math.floor(fc)), r = Math.min(N - 2, Math.floor(fr));
+  const a = fc - c, b = fr - r, H = T.H;
+  return H[r * N + c] * (1 - a) * (1 - b) + H[r * N + c + 1] * a * (1 - b) +
+         H[(r + 1) * N + c] * (1 - a) * b + H[(r + 1) * N + c + 1] * a * b;
+}
+
+// Profil cakrawala: sudut elevasi tertinggi per sinar di dalam bidang pandang
+function profile(T, ox, oy, az, rays = 25) {
+  const eye = hAt(T, ox, oy) + EYE, out = new Float32Array(rays);
+  let dsum = 0;
+  for (let i = 0; i < rays; i++) {
+    const a = (az + (i / (rays - 1) - 0.5) * HFOV) * Math.PI / 180;
+    const sx = Math.sin(a), sy = Math.cos(a);
+    let m = -90, md = 0;
+    for (let d = 15; d < 3000; d += d < 300 ? 8 : (d < 1000 ? 15 : 30)) {
+      const g = Math.atan2(hAt(T, ox + sx * d, oy + sy * d) - eye, d) * 57.29578;
+      if (g > m) { m = g; md = d; }
+    }
+    out[i] = m; dsum += md;
+  }
+  out.dist = dsum / rays;
+  return out;
+}
+function pdiff(a, b) { let s = 0; for (let i = 0; i < a.length; i++) s += Math.abs(a[i] - b[i]); return s / a.length; }
+function relief(p) { let mx = -90, mn = 90; for (const v of p) { if (v > mx) mx = v; if (v < mn) mn = v; } return { mx, range: mx - mn }; }
+const interesting = p => { const r = relief(p); return r.mx >= 2.5 && r.mx <= 11 && r.range >= 1.5 && p.dist >= 450; };
+// titik berdiri harus di dataran rendah yang relatif datar, bukan di pinggang bukit
+function goodStand(T, x, y, frac) {
+  const h = hAt(T, x, y); if (h > T.max * frac) return false;
+  const s = Math.max(Math.abs(hAt(T, x + 40, y) - hAt(T, x - 40, y)), Math.abs(hAt(T, x, y + 40) - hAt(T, x, y - 40)));
+  return s < 14;
+}
+
+function makeWhich(seed, level) {
+  const rng = rngFrom(seed), thr = level === 'tanjakan' ? 1.3 : 2.2;
+  for (let tries = 0; tries < 80; tries++) {
+    const T = genTerrain(rng, level);
+    if (!goodStand(T, 0, 0, 0.3)) continue;
+    const P = DIRS.map(d => profile(T, 0, 0, d.az));
+    const cands = [];
+    for (let i = 0; i < 8; i++) {
+      if (!interesting(P[i])) continue;
+      let md = 99;
+      for (let j = 0; j < 8; j++) if (j !== i) md = Math.min(md, pdiff(P[i], P[j]));
+      if (md >= thr) cands.push(i);
+    }
+    if (!cands.length) continue;
+    const ans = cands[Math.floor(rng() * cands.length)];
+    return { type: 'arah', T, obs: { x: 0, y: 0 }, ans, az: DIRS[ans].az, rot: 0, level, sun: rng() * 360 };
+  }
+  return null;
+}
+
+function makeWhere(seed, level) {
+  const rng = rngFrom(seed), thr = level === 'tanjakan' ? 1.3 : 2.2, az = 0;
+  for (let tries = 0; tries < 60; tries++) {
+    const T = genTerrain(rng, level);
+    for (let k = 0; k < 30; k++) {
+      const pts = []; let guard = 0;
+      while (pts.length < 3 && guard++ < 200) {
+        const x = (rng() * 2 - 1) * 650, y = (rng() * 2 - 1) * 650;
+        if (!goodStand(T, x, y, 0.35)) continue;
+        if (pts.some(p => Math.hypot(p.x - x, p.y - y) < 380)) continue;
+        pts.push({ x, y });
+      }
+      if (pts.length < 3) continue;
+      const P = pts.map(p => profile(T, p.x, p.y, az));
+      const good = [0, 1, 2].filter(i => interesting(P[i]));
+      if (!good.length) continue;
+      const ans = good[Math.floor(rng() * good.length)];
+      const md = Math.min(...[0, 1, 2].filter(j => j !== ans).map(j => pdiff(P[ans], P[j])));
+      if (md < thr) continue;
+      const rot = level === 'tanjakan' ? [90, 180, 270][Math.floor(rng() * 3)] : 0;
+      return { type: 'posisi', T, pts, ans, az, rot, level, sun: rng() * 360 };
+    }
+  }
+  return null;
+}
+
+function makePuzzle(r) {
+  for (let k = 0; k < 6; k++) {
+    const s = r.seed + (k ? '#' + k : '');
+    const p = r.type === 'arah' ? makeWhich(s, r.level) : makeWhere(s, r.level);
+    if (p) return p;
+  }
+  return null;
+}
+/*CORE-END*/
+
+// ================= TAMPILAN 3D =================
+let renderer, scene, camera, terrain, sun;
+const view = document.getElementById('view');
+let webglOK = true;
+
+function init3D() {
+  try {
+    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  } catch (e) { webglOK = false; return; }
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.setClearColor(0x000000, 0);
+  view.prepend(renderer.domElement);
+  scene = new THREE.Scene();
+  scene.fog = new THREE.Fog(0x71849a, 1200, 9000);
+  camera = new THREE.PerspectiveCamera(40, 16 / 9, 0.5, 30000);
+  scene.add(new THREE.HemisphereLight(0xd6e4f2, 0x2e3b22, 0.58));
+  sun = new THREE.DirectionalLight(0xfff0d6, 1.1);
+  scene.add(sun);
+  const g = new THREE.PlaneGeometry(80000, 80000); g.rotateX(-Math.PI / 2);
+  const ground = new THREE.Mesh(g, new THREE.MeshLambertMaterial({ color: 0x2f4a25 }));
+  ground.position.y = -0.4; scene.add(ground);
+  new ResizeObserver(() => { resize3D(); render3D(); }).observe(view);
+}
+
+const STOPS = [[0, [0x2f, 0x4a, 0x25]], [.22, [0x3e, 0x5b, 0x2a]], [.45, [0x57, 0x5f, 0x30]], [.7, [0x78, 0x6b, 0x3e]], [1, [0x93, 0x80, 0x52]]];
+function colorFor(h) {
+  const t = Math.max(0, Math.min(1, h / 260));
+  for (let i = 1; i < STOPS.length; i++) {
+    if (t <= STOPS[i][0]) {
+      const [t0, c0] = STOPS[i - 1], [t1, c1] = STOPS[i], f = (t - t0) / (t1 - t0);
+      return c0.map((v, j) => (v + (c1[j] - v) * f) / 255);
+    }
+  }
+  return STOPS[STOPS.length - 1][1].map(v => v / 255);
+}
+
+function buildTerrain(T, sunAz) {
+  if (!webglOK) return;
+  if (terrain) { scene.remove(terrain); terrain.geometry.dispose(); terrain.material.dispose(); }
+  const geo = new THREE.PlaneGeometry(SIZE, SIZE, N - 1, N - 1);
+  geo.rotateX(-Math.PI / 2);
+  const pos = geo.attributes.position, col = new Float32Array(pos.count * 3);
+  for (let i = 0; i < pos.count; i++) {
+    pos.setY(i, T.H[i]);
+    const r = Math.floor(i / N), c0 = i % N;
+    const gx = T.H[r * N + Math.min(N - 1, c0 + 1)] - T.H[r * N + Math.max(0, c0 - 1)];
+    const gy = T.H[Math.min(N - 1, r + 1) * N + c0] - T.H[Math.max(0, r - 1) * N + c0];
+    const slope = Math.min(1, Math.hypot(gx, gy) / (4 * CELL));
+    const jit = Math.sin(c0 * 0.9 + r * 0.37) * Math.cos(r * 0.71 - c0 * 0.23) * 0.05;
+    const c = colorFor(T.H[i] + slope * 60), k = 1 - slope * 0.2 + jit;
+    col[i * 3] = c[0] * k; col[i * 3 + 1] = c[1] * k; col[i * 3 + 2] = c[2] * k;
+  }
+  geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
+  geo.computeVertexNormals();
+  terrain = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ vertexColors: true }));
+  scene.add(terrain);
+  const a = sunAz * Math.PI / 180;
+  sun.position.set(Math.sin(a) * 800, 650, -Math.cos(a) * 800);
+}
+
+function setCamera(T, x, y, az) {
+  if (!webglOK) return;
+  const h = hAt(T, x, y) + EYE, a = az * Math.PI / 180;
+  camera.position.set(x, h, -y);
+  camera.lookAt(x + Math.sin(a) * 1000, h - 1000 * Math.tan(3 * Math.PI / 180), -y - Math.cos(a) * 1000);
+}
+function resize3D() {
+  if (!webglOK) return;
+  const w = view.clientWidth, h = view.clientHeight; if (!w || !h) return;
+  camera.aspect = w / h;
+  camera.fov = 2 * Math.atan(Math.tan(HFOV * Math.PI / 360) / camera.aspect) * 180 / Math.PI;
+  camera.updateProjectionMatrix();
+  renderer.setSize(w, h, false);
+}
+function render3D() { if (webglOK && terrain) renderer.render(scene, camera); }
+
+// ================= PETA KONTUR =================
+const svg = d3.select('#map');
+const S = 1000, K = S / N;
+const toSvg = (x, y) => [((x + HALF) / CELL + 0.5) * K, ((HALF - y) / CELL + 0.5) * K];
+function rotPt(p, rot) {
+  const a = rot * Math.PI / 180, dx = p[0] - 500, dy = p[1] - 500;
+  return [500 + dx * Math.cos(a) - dy * Math.sin(a), 500 + dx * Math.sin(a) + dy * Math.cos(a)];
+}
+const dirVec = az => [Math.sin(az * Math.PI / 180), -Math.cos(az * Math.PI / 180)];
+
+function drawMap(P) {
+  svg.selectAll('*').remove();
+  svg.attr('viewBox', `0 0 ${S} ${S}`);
+  svg.append('rect').attr('x', 1).attr('y', 1).attr('width', S - 2).attr('height', S - 2)
+    .attr('fill', 'var(--night)').attr('stroke', 'var(--line)').attr('stroke-width', 2);
+  const g = svg.append('g').attr('id', 'mapRot').attr('transform', `rotate(${P.rot} 500 500)`);
+  const th = d3.range(10, P.T.max, 10);
+  const cs = d3.contours().size([N, N]).thresholds(th)(Array.from(P.T.H));
+  const path = d3.geoPath(d3.geoIdentity().scale(K));
+  g.selectAll('path.c').data(cs).join('path')
+    .attr('class', d => d.value % 50 === 0 ? 'c idx' : 'c').attr('d', path);
+
+  // label elevasi pada kontur indeks
+  const lg = g.append('g'), placed = [];
+  cs.filter(d => d.value % 50 === 0).forEach(d => {
+    const el = lg.append('path').attr('d', path(d)).attr('fill', 'none').node();
+    const L = el.getTotalLength();
+    if (L < 140) { el.remove(); return; }
+    const p1 = el.getPointAtLength(L * 0.27), p2 = el.getPointAtLength(L * 0.27 + 6);
+    el.remove();
+    if (placed.some(q => Math.hypot(q.x - p1.x, q.y - p1.y) < 70)) return;
+    placed.push(p1);
+    let deg = Math.atan2(p2.y - p1.y, p2.x - p1.x) * 180 / Math.PI;
+    let f = ((deg + P.rot) % 360 + 540) % 360 - 180;
+    if (f > 90 || f < -90) deg += 180;
+    lg.append('text').attr('class', 'lbl').attr('transform', `translate(${p1.x},${p1.y}) rotate(${deg})`).text(d.value);
+  });
+  g.append('path').attr('id', 'cone').attr('class', 'cone').attr('display', 'none');
+
+  // panah utara
+  const na = svg.append('g').attr('transform', `rotate(${P.rot} 920 95)`);
+  na.append('line').attr('x1', 920).attr('y1', 140).attr('x2', 920).attr('y2', 58).attr('stroke', 'var(--paper)').attr('stroke-width', 3);
+  na.append('path').attr('d', 'M920 44 L908 66 L932 66 Z').attr('fill', 'var(--paper)');
+  const nl = (() => { const a = P.rot * Math.PI / 180, dx = 0, dy = 20 - 95; return [920 + dx * Math.cos(a) - dy * Math.sin(a), 95 + dx * Math.sin(a) + dy * Math.cos(a)]; })();
+  svg.append('text').attr('x', nl[0]).attr('y', nl[1]).attr('class', 'lbl').style('font-weight', 800).style('font-size', '30px').text('U');
+
+  // skala 500 m
+  const sb = 500 / CELL * K;
+  svg.append('line').attr('x1', 40).attr('y1', 960).attr('x2', 40 + sb).attr('y2', 960).attr('stroke', 'var(--paper)').attr('stroke-width', 3);
+  [40, 40 + sb].forEach(x => svg.append('line').attr('x1', x).attr('x2', x).attr('y1', 950).attr('y2', 970).attr('stroke', 'var(--paper)').attr('stroke-width', 3));
+  svg.append('text').attr('x', 40 + sb / 2).attr('y', 935).attr('class', 'lbl').style('font-size', '24px').text('500 m');
+
+  // penanda jawaban
+  const mk = svg.append('g').attr('id', 'marks');
+  if (P.type === 'arah') {
+    const c = rotPt(toSvg(P.obs.x, P.obs.y), P.rot);
+    DIRS.forEach((d, i) => {
+      const v = dirVec(d.az), r0 = 32, r1 = 92, rl = 124;
+      const a = mk.append('g').attr('class', 'arw mk').attr('data-i', i);
+      a.append('line').attr('x1', c[0] + v[0] * r0).attr('y1', c[1] + v[1] * r0).attr('x2', c[0] + v[0] * r1).attr('y2', c[1] + v[1] * r1);
+      a.append('text').attr('x', c[0] + v[0] * rl).attr('y', c[1] + v[1] * rl).text(d.k);
+      a.append('circle').attr('cx', c[0] + v[0] * 80).attr('cy', c[1] + v[1] * 80).attr('r', 38).attr('fill', 'transparent');
+    });
+    mk.append('circle').attr('cx', c[0]).attr('cy', c[1]).attr('r', 17).attr('fill', 'var(--night)').attr('stroke', 'var(--paper)').attr('stroke-width', 2.5);
+    mk.append('circle').attr('cx', c[0]).attr('cy', c[1]).attr('r', 10).attr('fill', '#d9453a');
+  } else {
+    P.pts.forEach((p, i) => {
+      const c = rotPt(toSvg(p.x, p.y), P.rot);
+      const a = mk.append('g').attr('class', 'mk').attr('data-i', i);
+      a.append('circle').attr('class', 'ring').attr('cx', c[0]).attr('cy', c[1]).attr('r', 30);
+      a.append('text').attr('x', c[0]).attr('y', c[1] + 1).text(LETTERS[i]);
+    });
+  }
+  mk.selectAll('.mk').on('click', function () { onPick(+this.getAttribute('data-i')); });
+}
+
+function drawCone(P, x, y, az) {
+  const c = toSvg(x, y), R = 300;
+  const v1 = dirVec(az - HFOV / 2), v2 = dirVec(az + HFOV / 2);
+  d3.select('#cone').attr('display', null)
+    .attr('d', `M${c[0]} ${c[1]} L${c[0] + v1[0] * R} ${c[1] + v1[1] * R} A${R} ${R} 0 0 1 ${c[0] + v2[0] * R} ${c[1] + v2[1] * R} Z`);
+}
+
+// ================= PENYIMPANAN =================
+const KEY = 'ngelereng:v1';
+function loadStore() {
+  try { const s = JSON.parse(localStorage.getItem(KEY)); if (s) return s; } catch (e) {}
+  return { streak: 0, best: 0, last: null, played: 0, right: 0, total: 0, days: {} };
+}
+function saveStore(s) { try { localStorage.setItem(KEY, JSON.stringify(s)); } catch (e) {} }
+let store = loadStore();
+
+function dateStr(d) { return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; }
+const TODAY = dateStr(new Date());
+const YESTERDAY = (() => { const d = new Date(); d.setDate(d.getDate() - 1); return dateStr(d); })();
+const DAYNO = (() => { const d = new Date(); return Math.floor((Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) - Date.UTC(2026, 8, 28)) / 864e5) + 1; })();
+
+// ================= ALUR PERMAINAN =================
+const $ = id => document.getElementById(id);
+let state = null;
+let freeType = 'arah', freeLevel = 'landai';
+
+function show(id) { ['home', 'game', 'result'].forEach(s => $(s).hidden = s !== id); window.scrollTo(0, 0); }
+
+function renderHome() {
+  $('dailyTitle').textContent = `Ngelereng Harian #${DAYNO}`;
+  const done = store.days[TODAY];
+  $('dailyText').textContent = done ? `Selesai hari ini dengan skor ${done.score}/3. Soal baru muncul besok.` : 'Tiga soal, sama untuk semua pemain hari ini.';
+  $('dailyBtn').textContent = done ? 'Lihat hasil hari ini' : 'Main soal hari ini';
+  const pct = store.total ? Math.round(store.right / store.total * 100) : 0;
+  $('stats').innerHTML = [[store.played, 'Hari main'], [store.streak, 'Streak'], [store.best, 'Streak terbaik'], [pct + '%', 'Tepat']]
+    .map(([v, l]) => `<div class="stat"><b>${v}</b><span>${l}</span></div>`).join('');
+  show('home');
+}
+
+function dailyRounds() {
+  const base = `ngelereng|${TODAY}`;
+  return [
+    { type: 'arah', level: 'landai', seed: base + '|1' },
+    { type: 'posisi', level: 'landai', seed: base + '|2' },
+    { type: DAYNO % 2 ? 'posisi' : 'arah', level: 'tanjakan', seed: base + '|3' }
+  ];
+}
+
+function startDaily() {
+  if (store.days[TODAY]) { showResult(store.days[TODAY].marks); return; }
+  state = { mode: 'daily', rounds: dailyRounds(), idx: 0, marks: [] };
+  show('game'); loadRound();
+}
+function startFree() {
+  state = { mode: 'free', idx: 0, marks: [], rounds: [] };
+  show('game'); nextFree();
+}
+function nextFree() {
+  state.rounds[state.idx] = { type: freeType, level: freeLevel, seed: 'free|' + Date.now() + '|' + Math.random() };
+  loadRound();
+}
+
+function loadRound() {
+  const r = state.rounds[state.idx];
+  $('loading').hidden = false; $('feedback').innerHTML = ''; $('hint').hidden = true;
+  view.classList.remove('explore');
+  $('whereLabel').textContent = state.mode === 'daily'
+    ? `Harian #${DAYNO}, soal ${state.idx + 1} dari 3`
+    : `Main bebas, ${r.level === 'landai' ? 'Landai' : 'Tanjakan'}`;
+  renderDots();
+  setTimeout(() => {
+    const P = makePuzzle(r);
+    if (!P) { $('loading').textContent = 'Medan gagal dibuat. Muat ulang halaman untuk mencoba lagi.'; return; }
+    state.P = P; state.revealed = false;
+    state.vx = P.type === 'arah' ? P.obs.x : P.pts[P.ans].x;
+    state.vy = P.type === 'arah' ? P.obs.y : P.pts[P.ans].y;
+    state.vaz = P.az; state.viewing = P.ans;
+    $('prompt').textContent = P.type === 'arah'
+      ? 'Kamu berdiri di titik merah. Ke mana kamu menghadap?'
+      : 'Kamu menghadap utara. Di titik mana kamu berdiri?';
+    $('badge').textContent = P.type === 'arah' ? 'Menghadap: ?' : 'Menghadap utara';
+    $('mapNote').textContent = P.rot ? 'Peta diputar, cek panah utara' : 'Utara di atas';
+    buildTerrain(P.T, P.sun); resize3D(); setCamera(P.T, state.vx, state.vy, state.vaz); render3D();
+    drawMap(P); renderAnswers();
+    $('loading').hidden = true;
+    if (!webglOK) { $('loading').hidden = false; $('loading').textContent = 'Browser ini tidak mendukung tampilan 3D (WebGL).'; }
+  }, 30);
+}
+
+function renderDots() {
+  if (state.mode !== 'daily') { $('dots').innerHTML = ''; return; }
+  $('dots').innerHTML = [0, 1, 2].map(i => {
+    const m = state.marks[i]; return `<i class="${m === true ? 'ok' : m === false ? 'no' : i === state.idx ? 'now' : ''}"></i>`;
+  }).join('');
+}
+
+function renderAnswers() {
+  const P = state.P, box = $('answers');
+  if (P.type === 'arah') {
+    const order = [7, 0, 1, 6, -1, 2, 5, 4, 3];
+    box.innerHTML = `<div class="compass">${order.map(i => i < 0
+      ? `<div class="mid">${state.revealed ? 'Ketuk untuk membandingkan' : 'Titik merah'}</div>`
+      : `<button class="opt" data-i="${i}">${DIRS[i].k}<small>${DIRS[i].n}</small></button>`).join('')}</div>`;
+  } else {
+    box.innerHTML = `<div class="abc">${[0, 1, 2].map(i => `<button class="opt" data-i="${i}">${LETTERS[i]}</button>`).join('')}</div>`;
+  }
+  box.querySelectorAll('.opt').forEach(b => b.addEventListener('click', () => onPick(+b.dataset.i)));
+  paintMarks();
+}
+
+function paintMarks() {
+  const P = state.P; if (!P) return;
+  document.querySelectorAll('#answers .opt').forEach(b => {
+    const i = +b.dataset.i;
+    b.classList.toggle('ok', state.revealed && i === P.ans);
+    b.classList.toggle('no', state.revealed && i === state.pick && i !== P.ans);
+    b.classList.toggle('viewing', state.revealed && i === state.viewing);
+  });
+  d3.selectAll('#marks .mk').each(function () {
+    const i = +this.getAttribute('data-i');
+    this.classList.toggle('ok', state.revealed && i === P.ans);
+    this.classList.toggle('no', state.revealed && i === state.pick && i !== P.ans);
+  });
+}
+
+function onPick(i) {
+  const P = state.P; if (!P) return;
+  if (!state.revealed) { reveal(i); return; }
+  // setelah menjawab: bandingkan pemandangan
+  state.viewing = i;
+  if (P.type === 'arah') { state.vaz = DIRS[i].az; }
+  else { state.vx = P.pts[i].x; state.vy = P.pts[i].y; state.vaz = P.az; }
+  updateView(); paintMarks();
+}
+
+function updateView() {
+  const P = state.P;
+  setCamera(P.T, state.vx, state.vy, state.vaz); render3D();
+  drawCone(P, state.vx, state.vy, state.vaz);
+  const az = ((Math.round(state.vaz) % 360) + 360) % 360;
+  const nearest = DIRS[Math.round(az / 45) % 8];
+  $('badge').textContent = P.type === 'arah'
+    ? `Menghadap ${String(az).padStart(3, '0')}°, ${nearest.n}`
+    : `Dari titik ${LETTERS[state.viewing] ?? '?'}, menghadap ${String(az).padStart(3, '0')}°`;
+}
+
+function reveal(i) {
+  const P = state.P, ok = i === P.ans;
+  state.revealed = true; state.pick = i;
+  state.marks[state.idx] = ok;
+  if (state.mode === 'free') { store.total++; if (ok) store.right++; saveStore(store); }
+  renderAnswers(); updateView(); renderDots();
+  $('hint').hidden = false; view.classList.add('explore');
+  const answerTxt = P.type === 'arah' ? `${DIRS[P.ans].n} (${DIRS[P.ans].k})` : `titik ${LETTERS[P.ans]}`;
+  const last = state.mode === 'daily' && state.idx === 2;
+  const nextLabel = state.mode === 'daily' ? (last ? 'Lihat hasil' : 'Soal berikutnya') : 'Soal baru';
+  $('feedback').innerHTML = `<div class="feedback ${ok ? 'ok' : 'no'}">
+    <h3>${ok ? 'Mantap, tepat!' : 'Nyasar!'}</h3>
+    <p>${ok ? 'Jawabannya memang ' + answerTxt + '.' : 'Jawaban yang benar: ' + answerTxt + '.'} Ketuk pilihan lain atau geser pemandangan untuk membandingkan dengan peta.</p>
+    <button class="btn primary" id="nextBtn">${nextLabel}</button></div>`;
+  $('nextBtn').addEventListener('click', () => {
+    if (state.mode === 'daily') {
+      if (last) finishDaily(); else { state.idx++; loadRound(); }
+    } else { state.idx++; nextFree(); }
+  });
+}
+
+function finishDaily() {
+  const marks = state.marks.slice(0, 3), score = marks.filter(Boolean).length;
+  if (!store.days[TODAY]) {
+    store.streak = store.last === YESTERDAY ? store.streak + 1 : (store.last === TODAY ? store.streak : 1);
+    store.best = Math.max(store.best, store.streak);
+    store.last = TODAY; store.played++; store.total += 3; store.right += score;
+    store.days[TODAY] = { score, marks };
+    saveStore(store);
+  }
+  showResult(marks);
+}
+
+function showResult(marks) {
+  const score = marks.filter(Boolean).length;
+  const sq = marks.map(m => m ? '🟩' : '🟥').join('');
+  $('resTitle').textContent = `Ngelereng Harian #${DAYNO}`;
+  $('resScore').textContent = `${score}/3`;
+  $('resSquares').textContent = sq;
+  $('resStreak').textContent = `Streak ${store.streak} hari, terbaik ${store.best} hari.`;
+  $('shareText').value = `Ngelereng #${DAYNO} ⛰️ ${score}/3\n${sq}\n🔥 streak ${store.streak}`;
+  $('copyBtn').textContent = 'Salin hasil';
+  show('result');
+}
+
+// geser pemandangan setelah menjawab
+let drag = null;
+view.addEventListener('pointerdown', e => {
+  if (!state || !state.revealed) return;
+  drag = { x: e.clientX, az: state.vaz }; view.setPointerCapture(e.pointerId);
+});
+view.addEventListener('pointermove', e => {
+  if (!drag) return;
+  state.vaz = drag.az - (e.clientX - drag.x) * HFOV / view.clientWidth;
+  state.viewing = state.P.type === 'arah' ? -1 : state.viewing;
+  updateView(); paintMarks();
+});
+['pointerup', 'pointercancel'].forEach(t => view.addEventListener(t, () => { drag = null; }));
+
+// tombol
+function segBind(id, set) {
+  $(id).querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
+    $(id).querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b));
+    set(b.dataset.v);
+  }));
+}
+segBind('segType', v => freeType = v);
+segBind('segLevel', v => freeLevel = v);
+$('dailyBtn').addEventListener('click', startDaily);
+$('freeBtn').addEventListener('click', startFree);
+$('backBtn').addEventListener('click', renderHome);
+$('backBtn2').addEventListener('click', renderHome);
+$('homeBtn').addEventListener('click', renderHome);
+$('copyBtn').addEventListener('click', async () => {
+  const t = $('shareText');
+  try { await navigator.clipboard.writeText(t.value); $('copyBtn').textContent = 'Tersalin'; }
+  catch (e) { t.focus(); t.select(); try { document.execCommand('copy'); $('copyBtn').textContent = 'Tersalin'; } catch (_) { $('copyBtn').textContent = 'Salin manual dari kotak di atas'; } }
+});
+
+init3D();
+renderHome();
+</script>
+</body>
+</html>
