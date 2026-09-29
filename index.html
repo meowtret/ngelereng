@@ -53,6 +53,18 @@ button{font:inherit;color:inherit}
 .seg button{flex:1 1 auto;min-height:42px;padding:8px 14px;border-radius:10px;border:1px solid var(--line);background:transparent;cursor:pointer}
 .seg button[aria-pressed="true"]{background:var(--paper);color:var(--night);border-color:var(--paper);font-weight:600}
 .seg-label{font-size:.9rem;color:var(--muted);margin:0 0 6px}
+.rank{display:flex;align-items:center;gap:14px;margin:4px 0 16px;padding:12px 14px;border-radius:12px;background:rgba(227,169,79,.08);border:1px solid rgba(227,169,79,.35)}
+.rank svg{flex:none;width:56px;height:56px}
+.rank .rk-l{font-size:.8rem;color:var(--muted)}
+.rank .rk-n{font-size:1.25rem;font-weight:800;color:var(--lantern);line-height:1.15}
+.rank .rk-t{flex:1;min-width:0}
+.rank .bar{height:6px;border-radius:99px;background:var(--line);margin:8px 0 4px;overflow:hidden}
+.rank .bar i{display:block;height:100%;background:var(--lantern);border-radius:99px}
+.rank .rk-p{font-size:.8rem;color:var(--muted)}
+.rank.up{animation:glow 1.6s ease-out 2}
+@keyframes glow{0%{box-shadow:0 0 0 0 rgba(227,169,79,.55)}100%{box-shadow:0 0 0 14px rgba(227,169,79,0)}}
+.ranks{margin:8px 0 0;padding:0;list-style:none}
+.ranks li{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--line)}
 .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:14px}
 .stat{padding:12px 6px;text-align:center;border-top:1px solid var(--line)}
 .stat b{display:block;font-size:1.6rem;font-weight:800;line-height:1.1}
@@ -149,6 +161,7 @@ details.how ol{padding-left:20px;margin:6px 0 0}
     <div class="panel daily">
       <h2 id="dailyTitle">Ngelereng Harian</h2>
       <p id="dailyText">Tiga soal, sama untuk semua pemain hari ini.</p>
+      <div class="rank" id="rankBox"></div>
       <button class="btn primary" id="dailyBtn">Main soal hari ini</button>
       <div class="stats" id="stats"></div>
     </div>
@@ -178,7 +191,9 @@ details.how ol{padding-left:20px;margin:6px 0 0}
       <li>Soal "Di mana berdiri?": kamu menghadap arah yang disebut, pilih titik A, B, atau C. Perhatikan panah utara, karena peta bisa diputar.</li>
       <li>Jawab lewat tombol, atau ketuk langsung di peta.</li>
       <li>Setelah menjawab, ketuk pilihan lain, ketuk peta, atau geser pemandangan untuk membandingkan.</li>
+      <li>Main Ngelereng Harian setiap hari untuk menjaga streak dan naik pangkat. Kalau terlewat sehari, streak kembali dari awal.</li>
     </ol>
+    <ul class="ranks" id="rankList"></ul>
   </details>
 </section>
 
@@ -218,7 +233,8 @@ details.how ol{padding-left:20px;margin:6px 0 0}
   <div class="result">
     <div class="score" id="resScore"></div>
     <div class="squares" id="resSquares"></div>
-    <p id="resStreak" style="color:var(--muted);margin:0 0 16px"></p>
+    <p id="resStreak" style="color:var(--muted);margin:0 0 12px"></p>
+    <div class="rank" id="resRank"></div>
     <img class="shareimg" id="shareImg" alt="Kartu hasil Ngelereng Harian">
     <div class="row">
       <button class="btn primary" id="dlBtn" disabled>Download hasil</button>
@@ -627,6 +643,54 @@ const TODAY = dateStr(new Date());
 const YESTERDAY = (() => { const d = new Date(); d.setDate(d.getDate() - 1); return dateStr(d); })();
 const DAYNO = (() => { const d = new Date(); return Math.floor((Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) - Date.UTC(2026, 8, 28)) / 864e5) + 1; })();
 
+// ================= PANGKAT STREAK =================
+const RANKS = [
+  { min: 0,  n: 'Calon Pejalan' },
+  { min: 1,  n: 'Pejalan Kaki' },
+  { min: 3,  n: 'Penjelajah Lereng' },
+  { min: 7,  n: 'Pembaca Medan' },
+  { min: 14, n: 'Penakluk Punggungan' },
+  { min: 30, n: 'Legenda Kontur' }
+];
+const rankIdx = st => { let k = 0; RANKS.forEach((r, i) => { if (st >= r.min) k = i; }); return k; };
+// streak yang masih berlaku: terputus kalau kemarin dan hari ini tidak main
+const liveStreak = () => (store.last === TODAY || store.last === YESTERDAY) ? store.streak : 0;
+
+// lencana: makin tinggi pangkat, makin banyak garis kontur
+function badgeSVG(k) {
+  let g = '';
+  if (k === 0) g = '<ellipse cx="28" cy="29" rx="22" ry="18" fill="none" stroke="#9aa3ae" stroke-width="2" stroke-dasharray="4 5"/>';
+  for (let i = 0; i < k; i++) {
+    const f = 1 - i / (k + 0.6);
+    g += `<ellipse cx="${28 + i * 0.9}" cy="${29 - i * 1.4}" rx="${22 * f}" ry="${18 * f}" fill="none" stroke="#ece8df" stroke-width="${i === 0 ? 2.4 : 1.6}"/>`;
+  }
+  if (k > 0) g += `<circle cx="${28 + k * 0.9}" cy="${29 - k * 1.4}" r="3.2" fill="#e3a94f"/>`;
+  return `<svg viewBox="0 0 56 56" aria-hidden="true">${g}</svg>`;
+}
+function drawBadge(x, cx, cy, R, k) {
+  x.save(); x.lineCap = 'round';
+  if (k === 0) {
+    x.setLineDash([R * .18, R * .22]); x.strokeStyle = '#9aa3ae'; x.lineWidth = R * .08;
+    x.beginPath(); x.ellipse(cx, cy, R, R * .82, 0, 0, Math.PI * 2); x.stroke();
+  }
+  for (let i = 0; i < k; i++) {
+    const f = 1 - i / (k + 0.6);
+    x.strokeStyle = '#ece8df'; x.lineWidth = i === 0 ? R * .1 : R * .065;
+    x.beginPath(); x.ellipse(cx + i * R * .04, cy - i * R * .064, R * f, R * .82 * f, 0, 0, Math.PI * 2); x.stroke();
+  }
+  if (k > 0) { x.fillStyle = '#e3a94f'; x.beginPath(); x.arc(cx + k * R * .04, cy - k * R * .064, R * .15, 0, Math.PI * 2); x.fill(); }
+  x.restore();
+}
+function rankHTML(st, up) {
+  const k = rankIdx(st), next = RANKS[k + 1];
+  let prog = '<div class="rk-p">Pangkat tertinggi sudah tercapai. Pertahankan!</div>';
+  if (next) {
+    const cur = RANKS[k].min, pct = Math.round((st - cur) / (next.min - cur) * 100), left = next.min - st;
+    prog = `<div class="bar"><i style="width:${pct}%"></i></div><div class="rk-p">${left} hari lagi menuju ${next.n}</div>`;
+  }
+  return `${badgeSVG(k)}<div class="rk-t"><div class="rk-l">${up ? 'Naik pangkat!' : 'Pangkat kamu'}</div><div class="rk-n">${RANKS[k].n}</div>${prog}</div>`;
+}
+
 // ================= ALUR PERMAINAN =================
 const $ = id => document.getElementById(id);
 let state = null;
@@ -640,7 +704,9 @@ function renderHome() {
   $('dailyText').textContent = done ? `Selesai hari ini dengan skor ${done.score}/3. Soal baru muncul besok.` : 'Tiga soal, sama untuk semua pemain hari ini.';
   $('dailyBtn').textContent = done ? 'Lihat hasil hari ini' : 'Main soal hari ini';
   const pct = store.total ? Math.round(store.right / store.total * 100) : 0;
-  $('stats').innerHTML = [[store.played, 'Hari main'], [store.streak, 'Streak'], [store.best, 'Streak terbaik'], [pct + '%', 'Tepat']]
+  $('rankBox').innerHTML = rankHTML(liveStreak(), false);
+  $('rankList').innerHTML = RANKS.slice(1).map((r, i) => `<li><span>${r.n}</span><span>${r.min}${RANKS[i + 2] ? '–' + (RANKS[i + 2].min - 1) : '+'} hari</span></li>`).join('');
+  $('stats').innerHTML = [[store.played, 'Hari main'], [liveStreak(), 'Streak'], [store.best, 'Streak terbaik'], [pct + '%', 'Tepat']]
     .map(([v, l]) => `<div class="stat"><b>${v}</b><span>${l}</span></div>`).join('');
   show('home');
 }
@@ -792,10 +858,11 @@ function reveal(i) {
 function finishDaily() {
   const marks = state.marks.slice(0, 3), score = marks.filter(Boolean).length;
   if (!store.days[TODAY]) {
+    const before = rankIdx(liveStreak());
     store.streak = store.last === YESTERDAY ? store.streak + 1 : (store.last === TODAY ? store.streak : 1);
     store.best = Math.max(store.best, store.streak);
     store.last = TODAY; store.played++; store.total += 3; store.right += score;
-    store.days[TODAY] = { score, marks };
+    store.days[TODAY] = { score, marks, rankUp: rankIdx(store.streak) > before };
     saveStore(store);
   }
   showResult(marks);
@@ -807,7 +874,10 @@ function showResult(marks) {
   $('resTitle').textContent = `Ngelereng Harian #${DAYNO}`;
   $('resScore').textContent = `${score}/3`;
   $('resSquares').textContent = sq;
-  $('resStreak').textContent = `Streak ${store.streak} hari, terbaik ${store.best} hari.`;
+  $('resStreak').textContent = `Streak ${liveStreak()} hari, terbaik ${store.best} hari.`;
+  const up = !!(store.days[TODAY] && store.days[TODAY].rankUp);
+  $('resRank').innerHTML = rankHTML(liveStreak(), up);
+  $('resRank').classList.toggle('up', up);
   $('dlBtn').disabled = true; $('dlBtn').textContent = 'Download hasil';
   $('shareImg').removeAttribute('src');
   show('result');
@@ -883,17 +953,27 @@ async function makeCard(marks, score) {
     x.fillStyle = m ? '#74c08f' : '#e26d5c'; x.fill();
   });
 
+  // pangkat
+  const st = liveStreak(), k = rankIdx(st), up = !!(store.days[TODAY] && store.days[TODAY].rankUp);
+  drawBadge(x, L + 62, 1418, 60, k);
+  x.fillStyle = up ? '#e3a94f' : '#9aa3ae'; x.font = `${up ? 700 : 400} 42px ${F}`;
+  x.fillText(up ? 'Naik pangkat!' : 'Pangkat', L + 160, 1392);
+  x.fillStyle = '#e3a94f'; x.font = `800 70px ${F}`;
+  x.fillText(RANKS[k].n, L + 160, 1462);
+
   // streak
-  x.fillStyle = '#e3a94f'; x.font = `800 76px ${F}`;
-  x.fillText(`🔥 Streak ${store.streak} hari`, L, 1440);
-  x.fillStyle = '#9aa3ae'; x.font = `400 46px ${F}`;
-  x.fillText(`Streak terbaik ${store.best} hari`, L, 1510);
+  x.fillStyle = '#ece8df'; x.font = `700 54px ${F}`;
+  const sTxt = `🔥 Streak ${st} hari`;
+  x.fillText(sTxt, L, 1570);
+  const sw = x.measureText(sTxt).width;
+  x.fillStyle = '#9aa3ae'; x.font = `400 40px ${F}`;
+  x.fillText(`(terbaik ${store.best})`, L + sw + 18, 1570);
 
   // ajakan
   x.fillStyle = '#ece8df'; x.font = `700 60px ${F}`;
-  x.fillText('Bisa kamu kalahkan?', L, 1650);
+  x.fillText('Bisa kamu kalahkan?', L, 1680);
   x.fillStyle = '#e3a94f'; x.font = `600 46px ${F}`;
-  x.fillText('meowtret.github.io/ngelereng', L, 1720);
+  x.fillText('meowtret.github.io/ngelereng', L, 1750);
   return cv;
 }
 
